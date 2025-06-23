@@ -1,19 +1,267 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="zh">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
+		<title>AAD 账号关联</title>
+		<script src="https://cdn.tailwindcss.com"></script>
 	</head>
-	<body>
-		<h1 id="heading"></h1>
+	<body class="bg-gray-100 min-h-screen">
+		<div class="container mx-auto px-4 py-8 max-w-2xl">
+			<div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+				<div id="loginStatus" class="hidden">
+					<div class="flex items-center justify-between">
+						<div>
+							<h2 class="text-xl font-bold" id="userName">未登录</h2>
+							<p class="text-sm text-gray-600" id="userStatus">状态：未知</p>
+						</div>
+						<button id="logoutBtn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+							退出登录
+						</button>
+					</div>
+				</div>
+
+				<div id="githubLogin" class="text-center">
+					<button id="githubLoginBtn" class="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center w-full">
+						<svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+							<path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+						</svg>
+						使用 GitHub 登录
+					</button>
+				</div>
+
+				<div id="orgVerification" class="hidden space-y-4">
+					<div class="flex items-center justify-between">
+						<div>
+							<h3 class="font-semibold">组织成员验证</h3>
+							<p id="orgStatus" class="text-sm text-gray-600">未验证</p>
+						</div>
+						<button id="refreshOrgBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+							刷新验证
+						</button>
+					</div>
+					<div id="refreshCooldown" class="hidden">
+						<p class="text-sm text-gray-600">下次可刷新时间：<span id="nextRefreshTime"></span></p>
+					</div>
+				</div>
+
+				<div id="aadSection" class="hidden space-y-4">
+					<h3 class="font-semibold">AAD 账号关联</h3>
+					<div id="aadStatus" class="text-sm text-gray-600">
+						未关联 AAD 账号
+					</div>
+					
+					<div id="aadActions" class="space-y-4">
+						<button id="aadLoginBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors w-full">
+							登录已有 AAD 账号
+						</button>
+						<div class="relative">
+							<div class="absolute inset-0 flex items-center">
+								<div class="w-full border-t border-gray-300"></div>
+							</div>
+							<div class="relative flex justify-center text-sm">
+								<span class="px-2 bg-white text-gray-500">或</span>
+							</div>
+						</div>
+						<div id="aadRegisterForm" class="space-y-4">
+							<div>
+								<label class="block text-sm font-medium text-gray-700">用户名</label>
+								<input type="text" id="aadUsername" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="仅限字母和数字">
+							</div>
+							<div>
+								<label class="block text-sm font-medium text-gray-700">显示名称</label>
+								<input type="text" id="aadDisplayName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="您的姓名">
+							</div>
+							<button id="aadRegisterBtn" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors w-full">
+								注册新 AAD 账号
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div id="successSection" class="hidden">
+					<div class="bg-green-50 border-l-4 border-green-400 p-4">
+						<div class="flex">
+							<div class="flex-shrink-0">
+								<svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+								</svg>
+							</div>
+							<div class="ml-3">
+								<p class="text-sm text-green-700">
+									AAD 账号关联成功！
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
-				});
+			let user = null;
+			let lastRefreshTime = null;
+
+			// 工具函数
+			function showElement(id) {
+				document.getElementById(id).classList.remove('hidden');
+			}
+
+			function hideElement(id) {
+				document.getElementById(id).classList.add('hidden');
+			}
+
+			function updateUI() {
+				if (user) {
+					showElement('loginStatus');
+					hideElement('githubLogin');
+					
+					document.getElementById('userName').textContent = user.name;
+					document.getElementById('userStatus').textContent = `状态：${getStatusText(user.status)}`;
+
+					if (user.status === 'unverified') {
+						showElement('orgVerification');
+						hideElement('aadSection');
+						hideElement('successSection');
+						document.getElementById('orgStatus').textContent = '未验证组织成员身份';
+					} else if (user.status === 'verified' || user.status === 'unlinked') {
+						showElement('orgVerification');
+						showElement('aadSection');
+						hideElement('successSection');
+						document.getElementById('orgStatus').textContent = '已验证组织成员身份';
+					} else if (user.status === 'active') {
+						hideElement('orgVerification');
+						hideElement('aadSection');
+						showElement('successSection');
+					}
+				} else {
+					hideElement('loginStatus');
+					showElement('githubLogin');
+					hideElement('orgVerification');
+					hideElement('aadSection');
+					hideElement('successSection');
+				}
+			}
+
+			function getStatusText(status) {
+				const statusMap = {
+					'unverified': '未验证',
+					'verified': '已验证',
+					'unlinked': '未关联',
+					'active': '正常'
+				};
+				return statusMap[status] || status;
+			}
+
+			// 检查登录状态
+			async function checkLoginStatus() {
+				try {
+					const response = await fetch('/api/user');
+					const data = await response.json();
+					
+					if (data.code === 0) {
+						user = data.data;
+					} else {
+						user = null;
+					}
+				} catch (error) {
+					console.error('检查登录状态失败:', error);
+					user = null;
+				}
+				updateUI();
+			}
+
+			// 刷新组织成员验证状态
+			async function refreshOrgStatus() {
+				try {
+					const response = await fetch('/api/user/refresh-org-status', {
+						method: 'POST'
+					});
+					const data = await response.json();
+
+					if (data.code === 0) {
+						await checkLoginStatus();
+					} else if (data.code === 429) {
+						// 显示冷却时间
+						showElement('refreshCooldown');
+						document.getElementById('nextRefreshTime').textContent = 
+							new Date(data.data.nextVerificationAllowedAt).toLocaleString();
+					} else if (data.code === 401 && data.data?.redirectUrl) {
+						window.location.href = data.data.redirectUrl;
+					} else {
+						alert(data.message || '刷新验证状态失败');
+					}
+				} catch (error) {
+					console.error('刷新验证状态失败:', error);
+					alert('刷新验证状态失败');
+				}
+			}
+
+			// 注册 AAD 账号
+			async function registerAAD() {
+				const username = document.getElementById('aadUsername').value.trim();
+				const displayName = document.getElementById('aadDisplayName').value.trim();
+
+				if (!username || !displayName) {
+					alert('请填写完整信息');
+					return;
+				}
+
+				if (!/^[a-zA-Z0-9]+$/.test(username)) {
+					alert('用户名只能包含字母和数字');
+					return;
+				}
+
+				try {
+					const response = await fetch('/api/user/login/aad/register', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ username, displayName })
+					});
+
+					const data = await response.json();
+
+					if (data.code === 0) {
+						alert(`AAD 账号创建成功！\n邮箱：${data.data.aad.email}\n密码：${data.data.aad.password}\n请保存好这些信息！`);
+						user = data.data.user;
+						updateUI();
+					} else {
+						alert(data.message || '创建 AAD 账号失败');
+					}
+				} catch (error) {
+					console.error('创建 AAD 账号失败:', error);
+					alert('创建 AAD 账号失败');
+				}
+			}
+
+			// 事件监听
+			document.getElementById('githubLoginBtn').addEventListener('click', () => {
+				                window.location.href = '/api/user/login/github?redirect_uri=' + encodeURIComponent(window.location.origin + '/github/callback');
+			});
+
+			document.getElementById('refreshOrgBtn').addEventListener('click', refreshOrgStatus);
+
+			document.getElementById('aadLoginBtn').addEventListener('click', () => {
+				                window.location.href = '/api/user/login/aad?redirect_uri=' + encodeURIComponent(window.location.origin + '/aad/callback');
+			});
+
+			document.getElementById('aadRegisterBtn').addEventListener('click', registerAAD);
+
+			document.getElementById('logoutBtn').addEventListener('click', async () => {
+				try {
+					await fetch('/api/user/logout', { method: 'POST' });
+					user = null;
+					updateUI();
+				} catch (error) {
+					console.error('退出登录失败:', error);
+					alert('退出登录失败');
+				}
+			});
+
+			// 初始化
+			checkLoginStatus();
 		</script>
 	</body>
 </html>

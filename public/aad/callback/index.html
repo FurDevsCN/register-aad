@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AAD 登录处理中...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900 mx-auto"></div>
+        <h2 class="mt-4 text-xl font-semibold text-gray-700">AAD 账号关联处理中...</h2>
+    </div>
+
+    <script>
+        async function handleCallback() {
+            try {
+                // 获取当前 URL 中的参数
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+                const error = urlParams.get('error');
+                const error_description = urlParams.get('error_description');
+
+                if (error) {
+                    throw new Error(error_description || '授权失败');
+                }
+
+                if (!code || !state) {
+                    throw new Error('缺少必要的参数');
+                }
+
+                // 调用原有的 callback 接口
+                const response = await fetch(`/api/user/login/aad/callback?${urlParams.toString()}`);
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    // 登录成功，跳转回首页
+                    window.location.href = '/';
+                } else {
+                    throw new Error(data.message || '关联失败');
+                }
+            } catch (error) {
+                alert(error.message || 'AAD 账号关联处理失败');
+                // 失败也跳转回首页
+                window.location.href = '/';
+            }
+        }
+
+        // 页面加载完成后立即处理
+        handleCallback();
+    </script>
+</body>
+</html> 
