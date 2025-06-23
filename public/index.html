@@ -224,7 +224,7 @@
 					const data = await response.json();
 
 					if (data.code === 0) {
-						alert(`AAD 账号创建成功！\n邮箱：${data.data.aad.email}\n密码：${data.data.aad.password}\n请保存好这些信息！`);
+						alert(`AAD 账号创建成功！\n邮箱：${data.data.aad.email}\n密码：${data.data.aad.password}\n请访问 outlook.office.com 登录，初次登录强制改密`);
 						user = data.data.user;
 						updateUI();
 					} else {
