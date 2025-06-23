@@ -7,10 +7,8 @@
 	"name": "register-aad",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-06-20",
-	"compatibility_flags": [
-		"global_fetch_strictly_public"
-	],
 	"assets": {
+		"binding": "ASSETS",
 		"directory": "./public"
 	},
 	"observability": {
